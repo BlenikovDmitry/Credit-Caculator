@@ -1,6 +1,8 @@
 import streamlit as st
 import config as cnf
 import statistics
+import datetime
+import pandas as pd
 
 #функция проверки ввода поля 'на лету'
 def input_check_digit(value):
@@ -49,6 +51,87 @@ def overpaid_diff(period, credit_sum, interest):
     period_month = period * 12
     return round((credit_sum * i * (period_month + 1)) / 2,2)
 
+#функция генерации графика платежей с аннуитетной схемой
+#общий принцип - генерируем датафрейм с датами платежей
+#считаем отдельно в списках:
+#остаток долга, 
+#ежемесячный платеж,
+#процентная часть,
+#долговая часть,
+#остаток долга на конец периода;
+#забиваем это в датафрейм df
+#объединяем с датами и выводим с интерфейс
+
+def payment_graphic_ann(start_date, months, payment, interest, credit_sum):
+    dates = [(start_date + pd.DateOffset(months=i)).date() for i in range(months)]
+    dates = pd.DataFrame(dates, columns=['Дата платежа'])
+    debt_ost = []
+    payments = []
+    payments_interest = []
+    payments_main_debt = []
+    main_debt = []
+    credit_sum_ost = credit_sum
+    i = interest / 12 / 100
+    for j in range(months):
+        debt_ost.append(credit_sum_ost)
+        month_interest = credit_sum_ost * i
+        main_debt_payment = payment - month_interest
+        credit_sum_ost = credit_sum_ost - main_debt_payment
+
+        
+        payments.append(payment)
+        payments_interest.append(month_interest)
+        payments_main_debt.append(main_debt_payment)
+        main_debt.append(credit_sum_ost)
+
+
+    df = pd.DataFrame({
+        'Остаток долга(руб.)': debt_ost,
+        'Ежемесячный платеж(руб.)': payments,
+        'Процентная часть(руб.)': payments_interest,
+        'Долговая часть(руб.)': payments_main_debt,
+        'Остаток долга на конец периода(руб.)': main_debt
+            })
+    df = pd.concat([dates,df], axis = 1)
+    df = df.reset_index(drop=True) 
+    st.dataframe(df)
+#функция генерации графика платежей с дифференцированной схемой
+#общий принцип тот же, только не нужно передавать платеж, его можно считать на лету
+def payment_graphic_diff(start_date, months, interest, credit_sum):
+    dates = [(start_date + pd.DateOffset(months=i)).date() for i in range(months)]
+    dates = pd.DataFrame(dates, columns=['Дата платежа'])
+
+    fix = credit_sum / months
+    debt_ost = []
+    payments = []
+    payments_interest = []
+    payments_main_debt = []
+    main_debt = []
+    credit_sum_ost = credit_sum
+    i = interest / 12 / 100
+    for j in range(months):
+        debt_ost.append(credit_sum_ost)
+        month_interest = credit_sum_ost * i
+        credit_sum_ost = credit_sum_ost - fix
+        
+        payments.append((fix + month_interest))
+        payments_interest.append(month_interest)
+        payments_main_debt.append(fix)
+        main_debt.append(credit_sum_ost)
+
+
+    df = pd.DataFrame({
+        'Остаток долга(руб.)': debt_ost,
+        'Ежемесячный платеж(руб.)': payments,
+        'Процентная часть(руб.)': payments_interest,
+        'Долговая часть(руб.)': payments_main_debt,
+        'Остаток долга на конец периода(руб.)': main_debt
+            })
+    df = pd.concat([dates,df], axis = 1)
+    df = df.reset_index(drop=True) 
+    st.dataframe(df)
+    
+
 #чуть расширяем функционал
 #делаем одну вкладку интерфейса и функционала по требованию задачи
 #вторую с продвинутым интерфейсом и расчетами
@@ -79,20 +162,27 @@ with interface_req:
 
     type_payment = st.selectbox('Вид платежа:',
                             ('Аннуитетный', 'Дифференцированный'), key = 'selectbox_calc_tab_req')
-    
+
+    start_date = st.date_input('Выберите дату первого платежа',
+                               datetime.date(2026,2,7), key = 'select_date_req')
     if st.button("Рассчитать", key = 'button_calc_tab_req'):
+        
         if input_check_all(credit_sum, repayment_period, interest):
             st.subheader('Расчеты:')
             if type_payment == 'Аннуитетный':
                 payment = annuitet_payment(int(credit_sum), float(interest), int(repayment_period))
                 st.info(f'Ежемесячный платеж: {payment} рублей')
                 st.info(f'Переплата за весь срок составит: {overpaid(payment, int(repayment_period), int(credit_sum))} рублей')
+
+                payment_graphic_ann(start_date, (int(repayment_period) * 12), payment, float(interest), int(credit_sum))
+                
             if type_payment == 'Дифференцированный':
                 payments = differ_payment(int(credit_sum), float(interest), int(repayment_period))
                 st.info(f'Максимальный платеж: {round(max(payments),2)} рублей')
                 st.info(f'Минимальный платеж: {round(min(payments),2)} рублей')
                 st.info(f'Средний платеж: {round(statistics.mean(payments),2)} рублей')
                 st.info(f'Переплата составит: {round(overpaid_diff(int(repayment_period), int(credit_sum), int(interest)),2)} рублей')
+                payment_graphic_diff(start_date, (int(repayment_period) * 12), float(interest), int(credit_sum))
         else:
             st.subheader(':red[Одно или несколько полей введено неверно]')
             
@@ -114,7 +204,8 @@ with interface_adv:
     interest = cnf.interest
     type_payment = st.selectbox('Вид платежа:',
                             ('Аннуитетный', 'Дифференцированный'), key = 'selectbox_calc_tab_adv')
-    
+    start_date = st.date_input('Выберите дату первого платежа',
+                               datetime.date(2026,2,7), key = 'select_date_adv')
     #при нажатии на кнопку 'Рассчитать' срабатывает обработчик и в зависимости от выбранных параметров
     #выбирает ставку и делает расчет
     if st.button("Рассчитать", key = 'button_calc_tab_adv'):
@@ -127,16 +218,19 @@ with interface_adv:
                 st.info(f'Процентная ставка: {interest[0]} %')
                 st.info(f'Ежемесячный платеж: {payment} рублей')
                 st.info(f'Переплата за весь срок составит: {overpaid(payment, int(repayment_period), int(credit_sum))} рублей')
+                payment_graphic_ann(start_date, (int(repayment_period) * 12), payment, float(interest[0]), int(credit_sum))
             elif category == "Я пенсионер":
                 payment = annuitet_payment(int(credit_sum), float(interest[1]), int(repayment_period))
                 st.info(f'Процентная ставка: {interest[1]} %')
                 st.info(f'Ежемесячный платеж: {payment} рублей')
                 st.info(f'Переплата за весь срок составит: {overpaid(payment, int(repayment_period), int(credit_sum))} рублей')
+                payment_graphic_ann(start_date, (int(repayment_period) * 12), payment, float(interest[1]), int(credit_sum))
             elif category == "Обычный заемщик":
                 payment = annuitet_payment(int(credit_sum), float(interest[2]), int(repayment_period))
                 st.info(f'Процентная ставка: {interest[2]} %')
                 st.info(f'Ежемесячный платеж: {payment} рублей')
                 st.info(f'Переплата за весь срок составит: {overpaid(payment, int(repayment_period), int(credit_sum))} рублей')
+                payment_graphic_ann(start_date, (int(repayment_period) * 12), payment, float(interest[2]), int(credit_sum))
         #при дифференцированном платеже
         if type_payment == 'Дифференцированный':
             if category == "Получаю зарплату на РСХБ":
@@ -146,6 +240,7 @@ with interface_adv:
                 st.info(f'Минимальный платеж: {round(min(payments),2)} рублей')
                 st.info(f'Средний платеж: {round(statistics.mean(payments),2)} рублей')
                 st.info(f'Переплата составит: {round(overpaid_diff(int(repayment_period), int(credit_sum), int(interest[0])),2)} рублей')
+                payment_graphic_diff(start_date, (int(repayment_period) * 12), float(interest[0]), int(credit_sum))
                 
             elif category == "Я пенсионер":
                 payments = differ_payment(int(credit_sum), float(interest[1]), int(repayment_period))
@@ -154,6 +249,7 @@ with interface_adv:
                 st.info(f'Минимальный платеж: {round(min(payments),2)} рублей')
                 st.info(f'Средний платеж: {round(statistics.mean(payments),2)} рублей')
                 st.info(f'Переплата составит: {round(overpaid_diff(int(repayment_period), int(credit_sum), int(interest[1])),2)} рублей')
+                payment_graphic_diff(start_date, (int(repayment_period) * 12), float(interest[1]), int(credit_sum))
 
             elif category == "Обычный заемщик":
                 payments = differ_payment(int(credit_sum), float(interest[2]), int(repayment_period))
@@ -162,5 +258,6 @@ with interface_adv:
                 st.info(f'Минимальный платеж: {round(min(payments),2)} рублей')
                 st.info(f'Средний платеж: {round(statistics.mean(payments),2)} рублей')
                 st.info(f'Переплата составит: {round(overpaid_diff(int(repayment_period), int(credit_sum), int(interest[2])),2)} рублей')
+                payment_graphic_diff(start_date, (int(repayment_period) * 12), float(interest[2]), int(credit_sum))
 
 
