@@ -175,6 +175,9 @@ with interface_req:
                 st.info(f'Переплата за весь срок составит: {overpaid(payment, int(repayment_period), int(credit_sum))} рублей')
 
                 payment_graphic_ann(start_date, (int(repayment_period) * 12), payment, float(interest), int(credit_sum))
+
+                with st.expander("Просмотреть важную информацию:"):
+                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
                 
             if type_payment == 'Дифференцированный':
                 payments = differ_payment(int(credit_sum), float(interest), int(repayment_period))
@@ -183,6 +186,11 @@ with interface_req:
                 st.info(f'Средний платеж: {round(statistics.mean(payments),2)} рублей')
                 st.info(f'Переплата составит: {round(overpaid_diff(int(repayment_period), int(credit_sum), int(interest)),2)} рублей')
                 payment_graphic_diff(start_date, (int(repayment_period) * 12), float(interest), int(credit_sum))
+
+                with st.expander("Просмотреть важную информацию:"):
+                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+
+                
         else:
             st.subheader(':red[Одно или несколько полей введено неверно]')
             
@@ -219,18 +227,30 @@ with interface_adv:
                 st.info(f'Ежемесячный платеж: {payment} рублей')
                 st.info(f'Переплата за весь срок составит: {overpaid(payment, int(repayment_period), int(credit_sum))} рублей')
                 payment_graphic_ann(start_date, (int(repayment_period) * 12), payment, float(interest[0]), int(credit_sum))
+
+                with st.expander("Просмотреть важную информацию:"):
+                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+                    
             elif category == "Я пенсионер":
                 payment = annuitet_payment(int(credit_sum), float(interest[1]), int(repayment_period))
                 st.info(f'Процентная ставка: {interest[1]} %')
                 st.info(f'Ежемесячный платеж: {payment} рублей')
                 st.info(f'Переплата за весь срок составит: {overpaid(payment, int(repayment_period), int(credit_sum))} рублей')
                 payment_graphic_ann(start_date, (int(repayment_period) * 12), payment, float(interest[1]), int(credit_sum))
+
+                with st.expander("Просмотреть важную информацию:"):
+                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+                    
             elif category == "Обычный заемщик":
                 payment = annuitet_payment(int(credit_sum), float(interest[2]), int(repayment_period))
                 st.info(f'Процентная ставка: {interest[2]} %')
                 st.info(f'Ежемесячный платеж: {payment} рублей')
                 st.info(f'Переплата за весь срок составит: {overpaid(payment, int(repayment_period), int(credit_sum))} рублей')
                 payment_graphic_ann(start_date, (int(repayment_period) * 12), payment, float(interest[2]), int(credit_sum))
+
+                with st.expander("Просмотреть важную информацию:"):
+                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+                    
         #при дифференцированном платеже
         if type_payment == 'Дифференцированный':
             if category == "Получаю зарплату на РСХБ":
@@ -241,6 +261,10 @@ with interface_adv:
                 st.info(f'Средний платеж: {round(statistics.mean(payments),2)} рублей')
                 st.info(f'Переплата составит: {round(overpaid_diff(int(repayment_period), int(credit_sum), int(interest[0])),2)} рублей')
                 payment_graphic_diff(start_date, (int(repayment_period) * 12), float(interest[0]), int(credit_sum))
+
+                with st.expander("Просмотреть важную информацию:"):
+                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+                    
                 
             elif category == "Я пенсионер":
                 payments = differ_payment(int(credit_sum), float(interest[1]), int(repayment_period))
@@ -251,6 +275,10 @@ with interface_adv:
                 st.info(f'Переплата составит: {round(overpaid_diff(int(repayment_period), int(credit_sum), int(interest[1])),2)} рублей')
                 payment_graphic_diff(start_date, (int(repayment_period) * 12), float(interest[1]), int(credit_sum))
 
+                with st.expander("Просмотреть важную информацию:"):
+                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+                    
+
             elif category == "Обычный заемщик":
                 payments = differ_payment(int(credit_sum), float(interest[2]), int(repayment_period))
                 st.info(f'Процентная ставка: {interest[2]} %')
@@ -259,5 +287,9 @@ with interface_adv:
                 st.info(f'Средний платеж: {round(statistics.mean(payments),2)} рублей')
                 st.info(f'Переплата составит: {round(overpaid_diff(int(repayment_period), int(credit_sum), int(interest[2])),2)} рублей')
                 payment_graphic_diff(start_date, (int(repayment_period) * 12), float(interest[2]), int(credit_sum))
+
+                with st.expander("Просмотреть важную информацию:"):
+                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+                    
 
 
