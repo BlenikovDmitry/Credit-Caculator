@@ -9,12 +9,12 @@ def input_check_digit(value):
     if value.isdigit():
         return ':blue[Ввод верный!]'
     else:
-        return ':red[Ошибка! Введите целое число]'
+        return ':red[Ошибка! Введите целое положительное число число]'
     
 #функция проверки ввода всех полей ввода перед расчетом 
 def input_check_all(*argc):
     for i in argc:
-        if input_check_digit(i) == ':red[Ошибка! Введите целое число]':
+        if input_check_digit(i) == ':red[Ошибка! Введите целое положительное число число]':
             return False
     return True
 
@@ -79,10 +79,10 @@ def payment_graphic_ann(start_date, months, payment, interest, credit_sum):
         credit_sum_ost = credit_sum_ost - main_debt_payment
 
         
-        payments.append(payment)
-        payments_interest.append(month_interest)
-        payments_main_debt.append(main_debt_payment)
-        main_debt.append(credit_sum_ost)
+        payments.append(round(payment,2))
+        payments_interest.append(round(month_interest,2))
+        payments_main_debt.append(round(main_debt_payment,2))
+        main_debt.append(round(credit_sum_ost,2))
 
 
     df = pd.DataFrame({
@@ -114,10 +114,10 @@ def payment_graphic_diff(start_date, months, interest, credit_sum):
         month_interest = credit_sum_ost * i
         credit_sum_ost = credit_sum_ost - fix
         
-        payments.append((fix + month_interest))
-        payments_interest.append(month_interest)
-        payments_main_debt.append(fix)
-        main_debt.append(credit_sum_ost)
+        payments.append(round((fix + month_interest),2))
+        payments_interest.append(round(month_interest,2))
+        payments_main_debt.append(round(fix,2))
+        main_debt.append(round(credit_sum_ost,2))
 
 
     df = pd.DataFrame({
@@ -148,11 +148,13 @@ with interface_req:
     st.header("Кредитный калькулятор")
     st.subheader("Параметры для расчета:")
 
-    credit_sum = st.text_input('Сумма кредита в рублях')
+    credit_sum = st.text_input(f'Сумма кредита в рублях')
     if credit_sum:
         st.write(input_check_digit(credit_sum))
+    else:
+        st.write(':red[Ошибка! Вышли за границы]')
 
-    repayment_period = st.text_input('Срок кредита(лет)')
+    repayment_period = st.text_input(f'Срок кредита(лет)')
     if repayment_period:
         st.write(input_check_digit(repayment_period))
 
@@ -177,7 +179,9 @@ with interface_req:
                 payment_graphic_ann(start_date, (int(repayment_period) * 12), payment, float(interest), int(credit_sum))
 
                 with st.expander("Просмотреть важную информацию:"):
-                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+                    st.write('Последний платеж является корректирующим и может быть чуть больше, чем нужно для погашения остатка долга и начисленных процентов')
+                    st.write('Неиспользованный остаток останется на Вашем счете погашения')
+                    
                 
             if type_payment == 'Дифференцированный':
                 payments = differ_payment(int(credit_sum), float(interest), int(repayment_period))
@@ -188,7 +192,8 @@ with interface_req:
                 payment_graphic_diff(start_date, (int(repayment_period) * 12), float(interest), int(credit_sum))
 
                 with st.expander("Просмотреть важную информацию:"):
-                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+                    st.write('Последний платеж является корректирующим и может быть чуть больше, чем нужно для погашения остатка долга и начисленных процентов')
+                    st.write('Неиспользованный остаток останется на Вашем счете погашения')
 
                 
         else:
@@ -229,7 +234,8 @@ with interface_adv:
                 payment_graphic_ann(start_date, (int(repayment_period) * 12), payment, float(interest[0]), int(credit_sum))
 
                 with st.expander("Просмотреть важную информацию:"):
-                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+                    st.write('Последний платеж является корректирующим и может быть чуть больше, чем нужно для погашения остатка долга и начисленных процентов')
+                    st.write('Неиспользованный остаток останется на Вашем счете погашения')
                     
             elif category == "Я пенсионер":
                 payment = annuitet_payment(int(credit_sum), float(interest[1]), int(repayment_period))
@@ -239,7 +245,8 @@ with interface_adv:
                 payment_graphic_ann(start_date, (int(repayment_period) * 12), payment, float(interest[1]), int(credit_sum))
 
                 with st.expander("Просмотреть важную информацию:"):
-                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+                    st.write('Последний платеж является корректирующим и может быть чуть больше, чем нужно для погашения остатка долга и начисленных процентов')
+                    st.write('Неиспользованный остаток останется на Вашем счете погашения')
                     
             elif category == "Обычный заемщик":
                 payment = annuitet_payment(int(credit_sum), float(interest[2]), int(repayment_period))
@@ -249,7 +256,8 @@ with interface_adv:
                 payment_graphic_ann(start_date, (int(repayment_period) * 12), payment, float(interest[2]), int(credit_sum))
 
                 with st.expander("Просмотреть важную информацию:"):
-                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+                    st.write('Последний платеж является корректирующим и может быть чуть больше, чем нужно для погашения остатка долга и начисленных процентов')
+                    st.write('Неиспользованный остаток останется на Вашем счете погашения')
                     
         #при дифференцированном платеже
         if type_payment == 'Дифференцированный':
@@ -263,7 +271,8 @@ with interface_adv:
                 payment_graphic_diff(start_date, (int(repayment_period) * 12), float(interest[0]), int(credit_sum))
 
                 with st.expander("Просмотреть важную информацию:"):
-                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+                    st.write('Последний платеж является корректирующим и может быть чуть больше, чем нужно для погашения остатка долга и начисленных процентов')
+                    st.write('Неиспользованный остаток останется на Вашем счете погашения')
                     
                 
             elif category == "Я пенсионер":
@@ -276,7 +285,8 @@ with interface_adv:
                 payment_graphic_diff(start_date, (int(repayment_period) * 12), float(interest[1]), int(credit_sum))
 
                 with st.expander("Просмотреть важную информацию:"):
-                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+                    st.write('Последний платеж является корректирующим и может быть чуть больше, чем нужно для погашения остатка долга и начисленных процентов')
+                    st.write('Неиспользованный остаток останется на Вашем счете погашения')
                     
 
             elif category == "Обычный заемщик":
@@ -289,7 +299,8 @@ with interface_adv:
                 payment_graphic_diff(start_date, (int(repayment_period) * 12), float(interest[2]), int(credit_sum))
 
                 with st.expander("Просмотреть важную информацию:"):
-                    st.write('Последний платеж является корректирующим и может отличаться от платежа по договору')
+                    st.write('Последний платеж является корректирующим и может быть чуть больше, чем нужно для погашения остатка долга и начисленных процентов')
+                    st.write('Неиспользованный остаток останется на Вашем счете погашения')
                     
 
 
